@@ -100,13 +100,14 @@ def point_on_sphere(x0):
     return x
 
 def sample(x0,epsilon,max_iters=200):
-    x = x0
+    x = [x0]
+    y = []
     sol = 0
     j = 0
-    while boundary_distance(x) > epsilon:
-        y = point_in_sphere(x)
-        sol += a(x)*f(y)
-        x = point_on_sphere(x)
+    while boundary_distance(x[j]) > epsilon:
+        y.append(point_in_sphere(x[j]))
+        sol += a(x[j])*f(y[j])
+        x.append(point_on_sphere(x[j]))
 
         if j > max_iters: 
             print("ERROR: never reached the boundary")
@@ -115,29 +116,71 @@ def sample(x0,epsilon,max_iters=200):
         else:
             j += 1
     
-    sol += boundary_condition(x,epsilon)
-    return sol, j
+    sol += boundary_condition(x[j],epsilon)
+    x = np.array(x)
+    y = np.array(y)
+    return sol,x,y
 
-def main():
-    epsilon = 5 * 10**(-5)
-    #x0 = polar_to_cart(0.1244,-0.7906)
-    #x0 = polar_to_cart(0.2320,-0.0274)
-    #x0 = polar_to_cart(0.2187,-3.3975)
-    x0 = polar_to_cart(0.1476,-4.1617)
-    #x0 = polar_to_cart(0.0129,-1.4790)
-    N = 500
+def mcmc_solve(x0,epsilon,N):
     z = []
     num_steps = []
     for i in range(N):
-        sol,j = sample(x0,epsilon)
+        sol,x,y = sample(x0,epsilon)
         z.append(sol)
-        num_steps.append(j)
+        num_steps.append(len(x))
+    return z,num_steps
+
+def plot_single_mc(x0,epsilon):
+    sol,x,y = sample(x0,epsilon)
+    print("Number of steps = ", len(x))
     
+    plt.clf()
+    plt.scatter(x[0,0],x[0,1],c="green")
+    plt.scatter(x[1:-1,0],x[1:-1,1],c="blue")
+    plt.scatter(x[-1,0],x[-1,1],c="red")
+
+    # plot boundary
+    t = np.linspace(np.pi/2,np.pi*2,100)
+    plt.plot(np.cos(t),np.sin(t),linewidth=1,c="orange")
+    plt.plot(np.zeros(10),np.linspace(0,1,10),linewidth=1,c="orange")
+    plt.plot(np.linspace(0,1,10),np.zeros(10),linewidth=1,c="orange")
+    plt.show()
+
+def plot_epsilon_error(x0,N):
+    #epsilon_arr = np.array([0.1,0.05,0.01,0.005,0.001,0.0005,0.0001])
+    epsilon_arr = 0.001*np.arange(1,100)
+    acc_arr = np.zeros(len(epsilon_arr))
+    step_arr = np.zeros(len(epsilon_arr))
+    for i in range(len(epsilon_arr)):
+        z,num_steps = mcmc_solve(x0,epsilon_arr[i],N)
+        acc_arr[i] = np.abs(np.mean(z) - true_solution(x0))
+        step_arr[i] = np.mean(num_steps)
+    
+    plt.clf()
+    plt.plot(epsilon_arr,acc_arr)
+    plt.show()
+
+def print_results(x0,epsilon,N):
+    z,num_steps = mcmc_solve(x0,epsilon,N)
     print("Monte Carlo = ", np.mean(z))
     print("Actual Solution = ", true_solution(x0))
     print("Error = ", np.abs(np.mean(z) - true_solution(x0)))
     print("Average number of steps = ", np.mean(num_steps))
 
+    
+def main():
+    #x0 = polar_to_cart(0.1244,-0.7906)
+    #x0 = polar_to_cart(0.2320,-0.0274)
+    #x0 = polar_to_cart(0.2187,-3.3975)
+    x0 = polar_to_cart(0.1476,-4.1617)
+    #x0 = polar_to_cart(0.0129,-1.4790)
+    #epsilon = 5 * 10**(-5)
+    epsilon = 0.01
+    N = 500
+    #print_results(x0,epsilon,N)
+    #plot_single_mc(x0,epsilon)
+    plot_epsilon_error(x0,N)
+    
 main()    
 
 
