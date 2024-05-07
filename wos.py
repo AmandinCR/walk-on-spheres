@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def moving_average(x,w):
+    return np.convolve(x,np.ones(w),'same')/w
+
 def cart_to_polar(x):
     r = np.linalg.norm(x)
     theta = np.arctan2(x[1],x[0]) # between -pi and pi
@@ -21,6 +24,14 @@ def true_solution(x):
 def f(x):
     r,theta = cart_to_polar(x)
     return (2-r**2) * np.exp(-r**2/2)
+
+def check_inside(x):
+    if np.linalg.norm(x) > 1:
+        return 0
+    elif (x[1] > 0) and (x[0] > 0):
+        return 0
+    else:
+        return 1
 
 def get_distances(x):
     # this distnace function assumes x is never outside the domain
@@ -138,7 +149,6 @@ def plot_single_mc(x0,epsilon):
     plt.scatter(x[0,0],x[0,1],c="green")
     plt.scatter(x[1:-1,0],x[1:-1,1],c="blue")
     plt.scatter(x[-1,0],x[-1,1],c="red")
-
     # plot boundary
     t = np.linspace(np.pi/2,np.pi*2,100)
     plt.plot(np.cos(t),np.sin(t),linewidth=1,c="orange")
@@ -147,17 +157,36 @@ def plot_single_mc(x0,epsilon):
     plt.show()
 
 def plot_epsilon_error(x0,N):
-    #epsilon_arr = np.array([0.1,0.05,0.01,0.005,0.001,0.0005,0.0001])
-    epsilon_arr = 0.001*np.arange(1,100)
+    epsilon_arr = np.linspace(0.001,0.1,10)
     acc_arr = np.zeros(len(epsilon_arr))
+    var_arr = np.zeros(len(epsilon_arr))
     step_arr = np.zeros(len(epsilon_arr))
     for i in range(len(epsilon_arr)):
+        print("cooking...")
         z,num_steps = mcmc_solve(x0,epsilon_arr[i],N)
         acc_arr[i] = np.abs(np.mean(z) - true_solution(x0))
+        var_arr[i] = np.var(z)
         step_arr[i] = np.mean(num_steps)
-    
     plt.clf()
-    plt.plot(epsilon_arr,acc_arr)
+    #acc_avg_arr = moving_average(acc_arr,5)
+    #plt.plot(epsilon_arr,acc_avg_arr)
+    plt.plot(epsilon_arr,acc_arr,'--bo')
+    plt.show()
+
+def plot_N_error(x0,epsilon):
+    N_arr = np.array([2**2,2**3,2**4,2**5,2**6,2**7,2**8,2**9,2**10,2**11,2**12])
+    acc_arr = np.zeros(len(N_arr))
+    var_arr = np.zeros(len(N_arr))
+    step_arr = np.zeros(len(N_arr))
+    for i in range(len(N_arr)):
+        z,num_steps = mcmc_solve(x0,epsilon,N_arr[i])
+        acc_arr[i] = np.abs(np.mean(z) - true_solution(x0))
+        var_arr[i] = np.var(z)
+        step_arr[i] = np.mean(num_steps)
+    plt.clf()
+    #acc_avg_arr = moving_average(acc_arr,5)
+    #plt.loglog(N_arr,acc_avg_arr)
+    plt.loglog(N_arr,var_arr,'--bo')
     plt.show()
 
 def print_results(x0,epsilon,N):
@@ -167,19 +196,44 @@ def print_results(x0,epsilon,N):
     print("Error = ", np.abs(np.mean(z) - true_solution(x0)))
     print("Average number of steps = ", np.mean(num_steps))
 
-    
+def plot_contour(epsilon,N):
+    m = 15
+    x = np.linspace(-1.0, 1.0,m)
+    y = np.linspace(-1.0, 1.0,m)
+    X,Y = np.meshgrid(x,y)
+    Z = np.zeros((m,m))
+    Z_true = np.zeros((m,m))
+    for i in range(m):
+        for j in range(m):
+            x0 = np.array([X[i,j],Y[i,j]])
+            if check_inside(x0):
+                acc,_ = mcmc_solve(x0,epsilon,N)
+                Z[i,j] = np.mean(acc)
+                Z_true[i,j] = true_solution(x0)
+                #Z[i,j] = np.abs(np.mean(acc) - true_solution(x0))
+            else:
+                Z[i,j] = -0.5
+                Z_true[i,j] = -0.5
+    plt.subplot(2,2,1)
+    plt.contourf(X,Y,Z,cmap="bone")
+    plt.subplot(2,2,2)
+    plt.contourf(X,Y,Z_true,cmap="bone")
+    plt.colorbar()
+    plt.show()
+
 def main():
     #x0 = polar_to_cart(0.1244,-0.7906)
     #x0 = polar_to_cart(0.2320,-0.0274)
-    #x0 = polar_to_cart(0.2187,-3.3975)
-    x0 = polar_to_cart(0.1476,-4.1617)
+    x0 = polar_to_cart(0.2187,-3.3975)
+    #x0 = polar_to_cart(0.1476,-4.1617)
     #x0 = polar_to_cart(0.0129,-1.4790)
-    #epsilon = 5 * 10**(-5)
-    epsilon = 0.01
-    N = 500
+    epsilon = 0.001
+    N = 1000
     #print_results(x0,epsilon,N)
     #plot_single_mc(x0,epsilon)
     plot_epsilon_error(x0,N)
+    #plot_N_error(x0,epsilon)
+    #plot_contour(epsilon,N)
     
 main()    
 
