@@ -174,19 +174,21 @@ def plot_epsilon_error(x0,N):
     plt.show()
 
 def plot_N_error(x0,epsilon):
-    N_arr = np.array([2**2,2**3,2**4,2**5,2**6,2**7,2**8,2**9,2**10,2**11,2**12])
-    acc_arr = np.zeros(len(N_arr))
-    var_arr = np.zeros(len(N_arr))
-    step_arr = np.zeros(len(N_arr))
-    for i in range(len(N_arr)):
-        z,num_steps = mcmc_solve(x0,epsilon,N_arr[i])
-        acc_arr[i] = np.abs(np.mean(z) - true_solution(x0))
-        var_arr[i] = np.var(z)
-        step_arr[i] = np.mean(num_steps)
+    #N_arr = np.array([2**2,2**3,2**4,2**5,2**6,2**7,2**8,2**9,2**10,2**11,2**12])
+    #N_arr = np.array([50,100,500,1000,5000,10000])
+    N_arr = np.arange(100,10000,100)
+    M = 5
+    avg_acc_arr = np.zeros(len(N_arr))
+    for j in range(M):
+        acc_arr = np.zeros(len(N_arr))
+        z,_ = mcmc_solve(x0,epsilon,N_arr[-1])
+        for i in range(len(N_arr)):
+            acc_arr[i] = np.abs(np.mean(z[:N_arr[i]]) - true_solution(x0))
+        # compute running average
+        avg_acc_arr += acc_arr
+    avg_acc_arr = avg_acc_arr / M
     plt.clf()
-    #acc_avg_arr = moving_average(acc_arr,5)
-    #plt.loglog(N_arr,acc_avg_arr)
-    plt.loglog(N_arr,var_arr,'--bo')
+    plt.plot(N_arr,avg_acc_arr)
     plt.show()
 
 def print_results(x0,epsilon,N):
@@ -231,8 +233,8 @@ def main():
     N = 1000
     #print_results(x0,epsilon,N)
     #plot_single_mc(x0,epsilon)
-    plot_epsilon_error(x0,N)
-    #plot_N_error(x0,epsilon)
+    #plot_epsilon_error(x0,N)
+    plot_N_error(x0,epsilon)
     #plot_contour(epsilon,N)
     
 main()    
