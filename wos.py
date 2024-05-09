@@ -162,22 +162,17 @@ def plot_epsilon_error(x0,N):
     var_arr = np.zeros(len(epsilon_arr))
     step_arr = np.zeros(len(epsilon_arr))
     for i in range(len(epsilon_arr)):
-        print("cooking...")
         z,num_steps = mcmc_solve(x0,epsilon_arr[i],N)
         acc_arr[i] = np.abs(np.mean(z) - true_solution(x0))
         var_arr[i] = np.var(z)
         step_arr[i] = np.mean(num_steps)
     plt.clf()
-    #acc_avg_arr = moving_average(acc_arr,5)
-    #plt.plot(epsilon_arr,acc_avg_arr)
     plt.plot(epsilon_arr,acc_arr,'--bo')
     plt.show()
 
 def plot_N_error(x0,epsilon):
-    #N_arr = np.array([2**2,2**3,2**4,2**5,2**6,2**7,2**8,2**9,2**10,2**11,2**12])
-    #N_arr = np.array([50,100,500,1000,5000,10000])
-    N_arr = np.arange(100,10000,100)
     M = 5
+    N_arr = np.arange(100,10000,100)
     avg_acc_arr = np.zeros(len(N_arr))
     for j in range(M):
         acc_arr = np.zeros(len(N_arr))
@@ -216,12 +211,22 @@ def plot_contour(epsilon,N):
             else:
                 Z[i,j] = -0.5
                 Z_true[i,j] = -0.5
+    plt.clf()
     plt.subplot(2,2,1)
+    plt.title("walk-on-spheres solution")
     plt.contourf(X,Y,Z,cmap="bone")
+    plt.colorbar()
+    plt.xlabel("x")
+    plt.ylabel("y")
+
     plt.subplot(2,2,2)
+    plt.title("true solution")
     plt.contourf(X,Y,Z_true,cmap="bone")
     plt.colorbar()
-    plt.show()
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.savefig("contour_wos.png",dpi=500,bbox_inches="tight")
+    #plt.show()
 
 def main():
     #x0 = polar_to_cart(0.1244,-0.7906)
@@ -230,12 +235,12 @@ def main():
     #x0 = polar_to_cart(0.1476,-4.1617)
     #x0 = polar_to_cart(0.0129,-1.4790)
     epsilon = 0.001
-    N = 1000
+    N = 100
     #print_results(x0,epsilon,N)
     #plot_single_mc(x0,epsilon)
     #plot_epsilon_error(x0,N)
-    plot_N_error(x0,epsilon)
-    #plot_contour(epsilon,N)
+    #plot_N_error(x0,epsilon)
+    plot_contour(epsilon,N)
     
 main()    
 
